@@ -5,15 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Kitty Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('https://media.giphy.com/media/kZqbBT64ECtjy/giphy.gif') no-repeat center center fixed;
+            background-size: contain;
+            background-color: pink;
+            background-position: center top;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Press Start 2P', cursive;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Login Düğmesi Animasyonu (Büyüyüp Küçülme) */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .circle {
+            width: 120px;
+            height: 120px;
+            background-color: hotpink;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+            position: absolute;
+            left: 20px; /* Sol tarafta */
+            bottom: 20px; /* Alt tarafta */
+            z-index: 1;
+            animation: pulse 1s infinite alternate ease-in-out;
+        }
+
+        .circle:hover {
+            background-color: pink;
+        }
+
+        /* İçteki Beyaz Daire */
+        .circle .inner-white {
+            width: 80px;
+            height: 80px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* İçteki Pembe Daire */
+        .circle .inner-pink {
+            width: 50px;
+            height: 50px;
+            background-color: hotpink;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Login Formu */
+        .container {
+            background: rgba(255, 192, 203, 0.9);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            width: 250px;
+            position: absolute;
+            bottom: -200px; /* Başlangıçta aşağıda gizli */
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* Username Kısmı İçin Yukarıdan Aşağıya İnme Animasyonu */
+        #loginForm:target {
+            bottom: 50px; /* Yukarı çıkıyor */
+            opacity: 1;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            background: pink;
+            color: white;
+            border: none;
+            padding: 8px;
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: hotpink;
+        }
+
+        /* Saat */
+        .clock {
+            font-size: 18px;
+            color: white;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Login Düğmesi (Anchor Link ile) -->
     <a href="#loginForm" class="circle">
+        <!-- İçteki Daireler -->
         <div class="inner-white">
             <div class="inner-pink"></div>
         </div>
     </a>
 
+    <!-- Login Formu -->
     <div class="container" id="loginForm">
         <h2>Hello Kitty Login</h2>
         <input type="text" id="username" placeholder="Username">
@@ -21,8 +150,51 @@
         <button onclick="login()">Login</button>
     </div>
 
+    <!-- Saat -->
     <div class="clock" id="clock"></div>
 
-    <script src="script.js"></script>
+    <script>
+        // Kullanıcı adı ve şifreyi depolayacak dizi
+        let userCredentials = [];
+
+        // Saatin canlı olarak güncellenmesi
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // Saat her saniye güncellenir
+        setInterval(updateClock, 1000);
+        updateClock(); // Sayfa ilk yüklendiğinde hemen bir defa çağrılır
+
+        // Login işlemi
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username === 'admin' && password === 'admin') {
+                window.location.href = 'table.html';  // Başarıyla giriş yapıldığında yönlendirme
+            } else {
+                alert("Lütfen kullanıcı adı ve şifreyi doğru girin.");
+            }
+        }
+
+        // Double-click eventi ekle
+        document.addEventListener('dblclick', function(event) {
+            if (event.target === document.querySelector('.circle')) {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (username === 'admin' && password === 'admin') {
+                    window.location.href = 'table.html';  // Başarıyla giriş yapıldığında yönlendirme
+                } else {
+                    alert("Lütfen kullanıcı adı ve şifreyi doğru girin.");
+                }
+            }
+        });
+    </script>
 </body>
 </html>
