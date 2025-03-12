@@ -8,21 +8,20 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Login Düğmesi (Anchor Link ile) -->
     <a href="#loginForm" class="circle">
-        <!-- İçteki Daireler -->
         <div class="inner-white">
             <div class="inner-pink"></div>
         </div>
     </a>
 
-    <!-- Login Formu -->
     <div class="container" id="loginForm">
         <h2>Hello Kitty Login</h2>
-        <input type="text" placeholder="Username">
-        <input type="password" placeholder="Password">
-        <button>Login</button>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
     </div>
+
+    <div class="clock" id="clock"></div>
 
     <script src="script.js"></script>
 </body>
