@@ -1,9 +1,12 @@
-C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.exe
-C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.dll
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\appsettings.Development.json
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\appsettings.json
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.staticwebassets.runtime.json
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.staticwebassets.endpoints.json
+C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.exe
+C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.deps.json
+C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.runtimeconfig.json
+C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.dll
+C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.pdb
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\RazorPagesApp.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\RazorPagesApp.AssemblyInfoInputs.cache
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\RazorPagesApp.AssemblyInfo.cs
@@ -91,8 +94,5 @@ C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPag
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\RazorPagesApp.dll
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\refint\RazorPagesApp.dll
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\RazorPagesApp.pdb
-C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.deps.json
-C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.runtimeconfig.json
-C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\bin\Debug\net9.0\RazorPagesApp.pdb
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\RazorPagesApp.genruntimeconfig.cache
 C:\Users\Deren SU ERTUĞRUL\Desktop\CENG382test\Ceng382_25-26-202111010\RazorPagesApp\obj\Debug\net9.0\ref\RazorPagesApp.dll
