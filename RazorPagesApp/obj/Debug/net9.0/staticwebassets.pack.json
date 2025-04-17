@@ -9,6 +9,10 @@
       "PackagePath": "staticwebassets\\css\\site.css"
     },
     {
+      "Id": "C:\\Users\\Deren SU ERTUĞRUL\\Desktop\\CENG382test\\Ceng382_25-26-202111010\\RazorPagesApp\\wwwroot\\data\\users.json",
+      "PackagePath": "staticwebassets\\data\\users.json"
+    },
+    {
       "Id": "C:\\Users\\Deren SU ERTUĞRUL\\Desktop\\CENG382test\\Ceng382_25-26-202111010\\RazorPagesApp\\wwwroot\\favicon.ico",
       "PackagePath": "staticwebassets\\favicon.ico"
     },

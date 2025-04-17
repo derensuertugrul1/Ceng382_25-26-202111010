@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Hosting;
 using System.IO;
 
 
-// --- Page Model Definition ---
 namespace MyRazorApp.Pages
 {
     using MyRazorApp.Models;
@@ -21,10 +20,11 @@ namespace MyRazorApp.Pages
     {
         private readonly IWebHostEnvironment _env;
 
-    public IndexModel(IWebHostEnvironment env)
-    {
-        _env = env;
-    }
+        public IndexModel(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         private static List<ClassInformationModel> ClassList = new();
         [BindProperty]
         public ClassInformationModel ClassInfo { get; set; } = new();
@@ -32,10 +32,9 @@ namespace MyRazorApp.Pages
         [BindProperty]
         public int? EditId { get; set; }
 
-        // --- Filtering and Pagination Properties ---
         [BindProperty(SupportsGet = true)]
         [DisplayFormat(ConvertEmptyStringToNull = false)]
-        public string Filter { get; set; } = string.Empty;
+        public string? Filter { get; set; } = string.Empty;
 
         [BindProperty(SupportsGet = true)]
         public int PageNumber { get; set; } = 1;
@@ -47,74 +46,74 @@ namespace MyRazorApp.Pages
         public List<ClassInformationTable> DisplayList { get; set; } = new();
 
         public IActionResult OnPostExportJson(string selectedColumns = "")
-    {
-        try
         {
-            var data = GetFilteredData();
-            var columns = string.IsNullOrEmpty(selectedColumns)
-                ? new List<string>()
-                : selectedColumns.Split(',').ToList();
-
-            string json = Utils.Instance.ExportToJson(data, columns);
-           
-            // Create exports directory if it doesn't exist
-            var exportDir = Path.Combine(_env.ContentRootPath, "Exports");
-            Directory.CreateDirectory(exportDir);
-
-            // Create filename with timestamp
-            var fileName = $"class-export-{DateTime.Now:yyyyMMdd-HHmmss}.json";
-            var filePath = Path.Combine(exportDir, fileName);
-
-            // Write to file
-            System.IO.File.WriteAllText(filePath, json);
-
-            TempData["SuccessMessage"] = $"File exported successfully to Exports folder.";
-        }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = $"Error exporting file: {ex.Message}";
-        }
-
-        return RedirectToPage(new { Filter, PageNumber });
-    }
-        public void OnGet()
-        {
-            if (!ClassList.Any())
+            try
             {
-                GenerateSyntheticData();
+                var data = GetFilteredData();
+                var columns = string.IsNullOrEmpty(selectedColumns)
+                    ? new List<string>()
+                    : selectedColumns.Split(',').ToList();
+
+                string json = Utils.Instance.ExportToJson(data, columns);
+
+                var exportDir = Path.Combine(_env.ContentRootPath, "Exports");
+                Directory.CreateDirectory(exportDir);
+
+                var fileName = $"class-export-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+                var filePath = Path.Combine(exportDir, fileName);
+
+                System.IO.File.WriteAllText(filePath, json);
+
+                TempData["SuccessMessage"] = $"File exported successfully to Exports folder.";
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error exporting file: {ex.Message}";
+            }
+
+            return RedirectToPage(new { Filter, PageNumber });
+        }
+
+        public IActionResult OnGet()
+        {
+            if (!IsAuthenticated())
+                return RedirectToPage("Login");
+
+            if (!ClassList.Any())
+                GenerateSyntheticData();
+
             UpdateDisplayList();
 
             if (!EditId.HasValue)
             {
-                if (ClassInfo == null || ClassInfo.Id == 0) {
-                     ClassInfo = new ClassInformationModel();
-                     ModelState.Clear();
+                if (ClassInfo == null || ClassInfo.Id == 0)
+                {
+                    ClassInfo = new ClassInformationModel();
+                    ModelState.Clear();
                 }
             }
             else
             {
-                 if (ClassInfo == null || ClassInfo.Id != EditId.Value)
-                 {
-                     var classToEdit = ClassList.FirstOrDefault(c => c.Id == EditId.Value);
-                     if (classToEdit != null)
-                     {
-                         ClassInfo = classToEdit;
-                     }
-                     else
-                     {
-                         TempData["ErrorMessage"] = "The item you were trying to edit could not be found.";
-                         EditId = null;
-                         ClassInfo = new ClassInformationModel();
-                     }
-                 }
+                if (ClassInfo == null || ClassInfo.Id != EditId.Value)
+                {
+                    var classToEdit = ClassList.FirstOrDefault(c => c.Id == EditId.Value);
+                    if (classToEdit != null)
+                    {
+                        ClassInfo = classToEdit;
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = "The item you were trying to edit could not be found.";
+                        EditId = null;
+                        ClassInfo = new ClassInformationModel();
+                    }
+                }
             }
+            return Page();
         }
 
-        // --- POST Handlers ---
         public IActionResult OnPostAdd()
         {
-
             if (!ModelState.IsValid)
             {
                 UpdateDisplayList();
@@ -125,7 +124,7 @@ namespace MyRazorApp.Pages
 
             if (isUpdate)
             {
-                var existing = ClassList.FirstOrDefault(c => c.Id == EditId.Value);
+var existing = ClassList.FirstOrDefault(c => c.Id == EditId.GetValueOrDefault());
                 if (existing != null)
                 {
                     existing.ClassName = ClassInfo.ClassName;
@@ -135,13 +134,13 @@ namespace MyRazorApp.Pages
                 }
                 else
                 {
-                     ModelState.AddModelError(string.Empty, "The item you were trying to edit could not be found. It might have been deleted.");
-                     UpdateDisplayList();
-                     return Page();
+                    ModelState.AddModelError(string.Empty, "The item you were trying to edit could not be found. It might have been deleted.");
+                    UpdateDisplayList();
+                    return Page();
                 }
                 EditId = null;
             }
-            else // Add new item
+            else
             {
                 int newId = ClassList.Any() ? ClassList.Max(c => c.Id) + 1 : 1;
                 var newClass = new ClassInformationModel
@@ -158,10 +157,7 @@ namespace MyRazorApp.Pages
             ClassInfo = new ClassInformationModel();
             ModelState.Clear();
 
-            string currentFilter = this.Filter ?? string.Empty;
-            int currentPage = this.PageNumber;
-
-            return RedirectToPage(new { Filter = currentFilter, PageNumber = currentPage });
+            return RedirectToPage(new { Filter, PageNumber });
         }
 
         public IActionResult OnPostEdit(int id)
@@ -177,10 +173,7 @@ namespace MyRazorApp.Pages
             else
             {
                 TempData["ErrorMessage"] = "The item you tried to edit was not found.";
-                string currentFilter = this.Filter ?? string.Empty;
-                int currentPage = this.PageNumber;
- 
-                return RedirectToPage(new { Filter = currentFilter, PageNumber = currentPage });
+                return RedirectToPage(new { Filter, PageNumber });
             }
 
             UpdateDisplayList();
@@ -199,27 +192,29 @@ namespace MyRazorApp.Pages
             }
             else
             {
-                 TempData["ErrorMessage"] = "The item you tried to delete was not found.";
+                TempData["ErrorMessage"] = "The item you tried to delete was not found.";
             }
 
             UpdateDisplayList();
 
-            int pageNum = this.PageNumber;
-            if (pageNum > TotalPages && TotalPages > 0)
-            {
-                pageNum = TotalPages;
-            }
+            if (PageNumber > TotalPages && TotalPages > 0)
+                PageNumber = TotalPages;
             else if (TotalPages == 0)
-            {
-                pageNum = 1;
-            }
+                PageNumber = 1;
 
-
-            string currentFilter = this.Filter ?? string.Empty;
-            return RedirectToPage(new { Filter = currentFilter, PageNumber = pageNum });
+            return RedirectToPage(new { Filter, PageNumber });
         }
 
-        // --- Helper Methods ---
+        public IActionResult OnPostLogout()
+        {
+            HttpContext.Session.Clear();
+            Response.Cookies.Delete("username");
+            Response.Cookies.Delete("token");
+            Response.Cookies.Delete("session_id");
+
+            return RedirectToPage("Login");
+        }
+
         private void GenerateSyntheticData()
         {
             ClassList = new List<ClassInformationModel>();
@@ -253,12 +248,10 @@ namespace MyRazorApp.Pages
             TotalItems = query.Count();
             query = query.OrderBy(c => c.Id);
 
-            // Apply pagination
             List<ClassInformationModel> pagedList = query
                 .Skip((PageNumber - 1) * PageSize)
                 .Take(PageSize)
                 .ToList();
-
 
             DisplayList = pagedList.Select(c => new ClassInformationTable
             {
@@ -283,6 +276,21 @@ namespace MyRazorApp.Pages
             }
 
             return query.ToList();
+        }
+
+        private bool IsAuthenticated()
+        {
+            var sessionUsername = HttpContext.Session.GetString("username");
+            var cookieUsername = Request.Cookies["username"];
+            var sessionToken = HttpContext.Session.GetString("token");
+            var cookieToken = Request.Cookies["token"];
+            var sessionId = HttpContext.Session.GetString("session_id");
+            var cookieSessionId = Request.Cookies["session_id"];
+
+            return sessionUsername != null &&
+                   cookieUsername == sessionUsername &&
+                   cookieToken == sessionToken &&
+                   cookieSessionId == sessionId;
         }
     }
 }
