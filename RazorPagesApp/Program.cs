@@ -1,10 +1,21 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.EntityFrameworkCore;
+using RazorPagesApp.Data;
 
-// Add services to the container.
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<SchoolDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SchoolDbConnection")));
+
+
+// Veritabanı için DbContext ekleme
+builder.Services.AddDbContext<SchoolDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SchoolDbConnection")));
+
+// Servisleri container'a ekleme
 builder.Services.AddRazorPages();
 
-builder.Services.AddSession(options =>
-{
+// Oturum servislerini ekleme
+builder.Services.AddDistributedMemoryCache(); // Oturum için gerekli
+builder.Services.AddSession(options => {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
@@ -12,21 +23,19 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Middleware pipeline
-if (!app.Environment.IsDevelopment())
-{
+// HTTP istek boru hattını yapılandırma
+if (!app.Environment.IsDevelopment()) {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
-// Eğer `UseStaticFiles()` eklenmediyse, mutlaka ekle:
 app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseSession(); // Routing'den sonra da kullanılabilir, ama genelde burada sorun olmaz
+// Oturumu UseAuthorization'dan önce ve UseRouting'den sonra kullanmalısınız
+app.UseSession();
 app.UseAuthorization();
 
 app.MapRazorPages();
