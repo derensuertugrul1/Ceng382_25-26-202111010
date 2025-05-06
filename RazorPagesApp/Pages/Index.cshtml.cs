@@ -1,31 +1,32 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
-using System;
-using System.ComponentModel.DataAnnotations;
-using MyRazorApp.Helpers;
-using System.Text;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
+using RazorPagesApp.Models;
+using RazorPagesApp.Data;
+using RazorPagesApp.Helpers;
 
-namespace MyRazorApp.Pages
+namespace RazorPagesApp.Pages
 {
-    using MyRazorApp.Models;
-
     public class IndexModel : PageModel
     {
         private readonly IWebHostEnvironment _env;
+        private readonly SchoolDbContext _context;
 
-        public IndexModel(IWebHostEnvironment env)
+        public IndexModel(IWebHostEnvironment env, SchoolDbContext context)
         {
             _env = env;
+            _context = context;
         }
 
-        private static List<ClassInformationModel> ClassList = new();
         [BindProperty]
         public ClassInformationModel ClassInfo { get; set; } = new();
 
@@ -33,7 +34,6 @@ namespace MyRazorApp.Pages
         public int? EditId { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        [DisplayFormat(ConvertEmptyStringToNull = false)]
         public string? Filter { get; set; } = string.Empty;
 
         [BindProperty(SupportsGet = true)]
@@ -45,12 +45,149 @@ namespace MyRazorApp.Pages
 
         public List<ClassInformationTable> DisplayList { get; set; } = new();
 
-        public IActionResult OnPostExportJson(string selectedColumns = "")
+        public async Task<IActionResult> OnGetAsync()
+        {
+            if (!IsAuthenticated())
+                return RedirectToPage("Login");
+
+            await UpdateDisplayListAsync();
+
+            if (!EditId.HasValue)
+            {
+                if (ClassInfo == null || ClassInfo.Id == 0)
+                {
+                    ClassInfo = new ClassInformationModel();
+                    ModelState.Clear();
+                }
+            }
+            else
+            {
+                var classToEdit = await _context.Classes.FindAsync(EditId.Value);
+                if (classToEdit != null)
+                {
+                    ClassInfo = new ClassInformationModel
+                    {
+                        Id = classToEdit.Id,
+                        ClassName = classToEdit.ClassName,
+                        StudentCount = classToEdit.StudentCount,
+                        Description = classToEdit.Description
+                    };
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "The item you were trying to edit could not be found.";
+                    EditId = null;
+                    ClassInfo = new ClassInformationModel();
+                }
+            }
+
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostAddAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                await UpdateDisplayListAsync();
+                return Page();
+            }
+
+            bool isUpdate = EditId.HasValue;
+
+            if (isUpdate)
+            {
+                var existing = await _context.Classes.FindAsync(EditId.Value);
+                if (existing != null)
+                {
+                    existing.ClassName = ClassInfo.ClassName;
+                    existing.StudentCount = ClassInfo.StudentCount;
+                    existing.Description = ClassInfo.Description;
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Class updated successfully.";
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "The item you were trying to edit could not be found.");
+                    await UpdateDisplayListAsync();
+                    return Page();
+                }
+
+                EditId = null;
+            }
+            else
+            {
+                var newClass = new Class
+                {
+                    ClassName = ClassInfo.ClassName,
+                    StudentCount = ClassInfo.StudentCount,
+                    Description = ClassInfo.Description,
+                    IsActive = true
+                };
+
+                _context.Classes.Add(newClass);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Class added successfully.";
+            }
+
+            ClassInfo = new ClassInformationModel();
+            ModelState.Clear();
+
+            return RedirectToPage(new { Filter, PageNumber });
+        }
+
+        public async Task<IActionResult> OnPostEditAsync(int id)
+        {
+            var classToEdit = await _context.Classes.FindAsync(id);
+            if (classToEdit != null)
+            {
+                ClassInfo = new ClassInformationModel
+                {
+                    Id = classToEdit.Id,
+                    ClassName = classToEdit.ClassName,
+                    StudentCount = classToEdit.StudentCount,
+                    Description = classToEdit.Description
+                };
+                EditId = id;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "The item you tried to edit was not found.";
+                return RedirectToPage(new { Filter, PageNumber });
+            }
+
+            await UpdateDisplayListAsync();
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostDeleteAsync(int id)
+        {
+            var classToDelete = await _context.Classes.FindAsync(id);
+            if (classToDelete != null)
+            {
+                classToDelete.IsActive = false;
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Class deleted successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "The item you tried to delete was not found.";
+            }
+
+            await UpdateDisplayListAsync();
+
+            int pageNum = PageNumber > TotalPages ? TotalPages : PageNumber;
+            pageNum = pageNum < 1 ? 1 : pageNum;
+
+            return RedirectToPage(new { Filter, PageNumber = pageNum });
+        }
+
+        public async Task<IActionResult> OnPostExportJson(string selectedColumns = "")
         {
             try
             {
-                var data = GetFilteredData();
-                var columns = string.IsNullOrEmpty(selectedColumns)
+                var data = await GetFilteredDataAsync();
+
+                var columns = string.IsNullOrWhiteSpace(selectedColumns)
                     ? new List<string>()
                     : selectedColumns.Split(',').ToList();
 
@@ -64,218 +201,70 @@ namespace MyRazorApp.Pages
 
                 System.IO.File.WriteAllText(filePath, json);
 
-                TempData["SuccessMessage"] = $"File exported successfully to Exports folder.";
+                TempData["SuccessMessage"] = "File exported successfully.";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error exporting file: {ex.Message}";
+                TempData["ErrorMessage"] = $"Export failed: {ex.Message}";
             }
 
             return RedirectToPage(new { Filter, PageNumber });
         }
 
-        public IActionResult OnGet()
+        private async Task UpdateDisplayListAsync()
         {
-            if (!IsAuthenticated())
-                return RedirectToPage("Login");
+            IQueryable<Class> query = _context.Classes.Where(c => c.IsActive);
 
-            if (!ClassList.Any())
-                GenerateSyntheticData();
-
-            UpdateDisplayList();
-
-            if (!EditId.HasValue)
+            if (!string.IsNullOrWhiteSpace(Filter))
             {
-                if (ClassInfo == null || ClassInfo.Id == 0)
-                {
-                    ClassInfo = new ClassInformationModel();
-                    ModelState.Clear();
-                }
-            }
-            else
-            {
-                if (ClassInfo == null || ClassInfo.Id != EditId.Value)
-                {
-                    var classToEdit = ClassList.FirstOrDefault(c => c.Id == EditId.Value);
-                    if (classToEdit != null)
-                    {
-                        ClassInfo = classToEdit;
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "The item you were trying to edit could not be found.";
-                        EditId = null;
-                        ClassInfo = new ClassInformationModel();
-                    }
-                }
-            }
-            return Page();
-        }
-
-        public IActionResult OnPostAdd()
-        {
-            if (!ModelState.IsValid)
-            {
-                UpdateDisplayList();
-                return Page();
-            }
-
-            bool isUpdate = EditId.HasValue;
-
-            if (isUpdate)
-            {
-var existing = ClassList.FirstOrDefault(c => c.Id == EditId.GetValueOrDefault());
-                if (existing != null)
-                {
-                    existing.ClassName = ClassInfo.ClassName;
-                    existing.StudentCount = ClassInfo.StudentCount;
-                    existing.Description = ClassInfo.Description;
-                    TempData["SuccessMessage"] = "Class updated successfully.";
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "The item you were trying to edit could not be found. It might have been deleted.");
-                    UpdateDisplayList();
-                    return Page();
-                }
-                EditId = null;
-            }
-            else
-            {
-                int newId = ClassList.Any() ? ClassList.Max(c => c.Id) + 1 : 1;
-                var newClass = new ClassInformationModel
-                {
-                    Id = newId,
-                    ClassName = ClassInfo.ClassName,
-                    StudentCount = ClassInfo.StudentCount,
-                    Description = ClassInfo.Description
-                };
-                ClassList.Add(newClass);
-                TempData["SuccessMessage"] = "Class added successfully.";
-            }
-
-            ClassInfo = new ClassInformationModel();
-            ModelState.Clear();
-
-            return RedirectToPage(new { Filter, PageNumber });
-        }
-
-        public IActionResult OnPostEdit(int id)
-        {
-            this.Filter ??= string.Empty;
-
-            var classToEdit = ClassList.FirstOrDefault(c => c.Id == id);
-            if (classToEdit != null)
-            {
-                ClassInfo = classToEdit;
-                EditId = id;
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "The item you tried to edit was not found.";
-                return RedirectToPage(new { Filter, PageNumber });
-            }
-
-            UpdateDisplayList();
-            return Page();
-        }
-
-        public IActionResult OnPostDelete(int id)
-        {
-            this.Filter ??= string.Empty;
-
-            var classToDelete = ClassList.FirstOrDefault(c => c.Id == id);
-            if (classToDelete != null)
-            {
-                ClassList.Remove(classToDelete);
-                TempData["SuccessMessage"] = "Class deleted successfully.";
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "The item you tried to delete was not found.";
-            }
-
-            UpdateDisplayList();
-
-            if (PageNumber > TotalPages && TotalPages > 0)
-                PageNumber = TotalPages;
-            else if (TotalPages == 0)
-                PageNumber = 1;
-
-            return RedirectToPage(new { Filter, PageNumber });
-        }
-
-        public IActionResult OnPostLogout()
-        {
-            HttpContext.Session.Clear();
-            Response.Cookies.Delete("username");
-            Response.Cookies.Delete("token");
-            Response.Cookies.Delete("session_id");
-
-            return RedirectToPage("Login");
-        }
-
-        private void GenerateSyntheticData()
-        {
-            ClassList = new List<ClassInformationModel>();
-            for (int i = 1; i <= 105; i++)
-            {
-                ClassList.Add(new ClassInformationModel
-                {
-                    Id = i,
-                    ClassName = $"Class {i:000}",
-                    StudentCount = (i % 15) + 5,
-                    Description = $"Description for Class {i:000}"
-                });
-            }
-        }
-
-        private void UpdateDisplayList()
-        {
-            string currentFilter = this.Filter ?? string.Empty;
-
-            IQueryable<ClassInformationModel> query = ClassList.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(currentFilter))
-            {
-                string lowerFilter = currentFilter.ToLowerInvariant();
+                var lowerFilter = Filter.ToLower();
                 query = query.Where(c =>
-                    (c.ClassName != null && c.ClassName.ToLowerInvariant().Contains(lowerFilter)) ||
-                    (c.Description != null && c.Description.ToLowerInvariant().Contains(lowerFilter))
+                    (!string.IsNullOrEmpty(c.ClassName) && c.ClassName.ToLower().Contains(lowerFilter)) ||
+                    (!string.IsNullOrEmpty(c.Description) && c.Description.ToLower().Contains(lowerFilter))
                 );
             }
 
-            TotalItems = query.Count();
-            query = query.OrderBy(c => c.Id);
+            TotalItems = await query.CountAsync();
 
-            List<ClassInformationModel> pagedList = query
+            var paged = await query
+                .OrderBy(c => c.Id)
                 .Skip((PageNumber - 1) * PageSize)
                 .Take(PageSize)
-                .ToList();
+                .ToListAsync();
 
-            DisplayList = pagedList.Select(c => new ClassInformationTable
+            DisplayList = paged.Select(c => new ClassInformationTable
             {
                 Id = c.Id,
                 ClassName = c.ClassName,
                 StudentCount = c.StudentCount,
-                Description = c.Description
+                Description = c.Description,
+                IsActive = c.IsActive
             }).ToList();
         }
 
-        private List<ClassInformationModel> GetFilteredData()
+        private async Task<List<ClassInformationModel>> GetFilteredDataAsync()
         {
-            IQueryable<ClassInformationModel> query = ClassList.AsQueryable();
+            IQueryable<Class> query = _context.Classes.Where(c => c.IsActive);
 
             if (!string.IsNullOrWhiteSpace(Filter))
             {
-                string lowerFilter = Filter.ToLowerInvariant();
+                var lowerFilter = Filter.ToLower();
                 query = query.Where(c =>
-                    (c.ClassName != null && c.ClassName.ToLowerInvariant().Contains(lowerFilter)) ||
-                    (c.Description != null && c.Description.ToLowerInvariant().Contains(lowerFilter))
+                    (!string.IsNullOrEmpty(c.ClassName) && c.ClassName.ToLower().Contains(lowerFilter)) ||
+                    (!string.IsNullOrEmpty(c.Description) && c.Description.ToLower().Contains(lowerFilter))
                 );
             }
 
-            return query.ToList();
+            var list = await query.ToListAsync();
+
+            return list.Select(c => new ClassInformationModel
+            {
+                Id = c.Id,
+                ClassName = c.ClassName,
+                StudentCount = c.StudentCount,
+                Description = c.Description,
+                IsActive = c.IsActive
+            }).ToList();
         }
 
         private bool IsAuthenticated()
